@@ -1,0 +1,29 @@
+# Keil MDK build output and per-user files
+MDK-ARM/LCD_888_H743/
+MDK-ARM/*.uvguix.*
+MDK-ARM/*.uvoptx
+MDK-ARM/*.lst
+MDK-ARM/*_output.txt
+
+# Common embedded build artifacts
+*.o
+*.obj
+*.d
+*.dep
+*.crf
+*.axf
+*.elf
+*.hex
+*.bin
+*.map
+*.lnp
+*.htm
+*.html
+
+# Backups and editor files
+*.bak
+*.user
+*.suo
+.vs/
+.DS_Store
+Thumbs.db
