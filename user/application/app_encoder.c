@@ -13,7 +13,6 @@
 #define APP_STATUS_PERIOD_MS  1000U
 #define APP_FILTER_SIZE       5U
 #define APP_DISPLAY_UNIT_NM   100LL
-#define APP_COUNTS_SPLIT      1000000000ULL
 #define APP_COMMAND_SIZE      16U
 
 typedef struct
@@ -38,31 +37,17 @@ static volatile uint8_t app_command_ready;
 
 static void App_Encoder_Process_Command(void)
 {
-    uint8_t is_zero_command;
-
     if (app_command_ready == 0U)
     {
         return;
     }
 
-    is_zero_command = (strcmp(app_command, "ZERO") == 0) ? 1U : 0U;
-    app_command_ready = 0U;
+    if (strcmp(app_command, "ZERO") == 0)
+    {
+        (void)Lic411_Set_Current_Position_As_Zero();
+    }
 
-    if (is_zero_command != 0U)
-    {
-        if (Lic411_Set_Current_Position_As_Zero() == 0U)
-        {
-            printf("OK ZERO\r\n");
-        }
-        else
-        {
-            printf("ERROR NO_VALID_POSITION\r\n");
-        }
-    }
-    else
-    {
-        printf("ERROR UNKNOWN_COMMAND\r\n");
-    }
+    app_command_ready = 0U;
 }
 
 static uint64_t App_Encoder_Get_Median(void)
@@ -136,29 +121,24 @@ static void App_Encoder_Print_Position(void)
 {
     int64_t display = app_encoder.display_01um;
     uint64_t magnitude = (display < 0) ? (uint64_t)(-display) : (uint64_t)display;
-    uint32_t mm = (uint32_t)(magnitude / 10000ULL);
-    uint32_t fraction = (uint32_t)(magnitude % 10000ULL);
-    uint32_t counts_high = (uint32_t)(app_encoder.filtered_counts / APP_COUNTS_SPLIT);
-    uint32_t counts_low = (uint32_t)(app_encoder.filtered_counts % APP_COUNTS_SPLIT);
+    uint32_t um = (uint32_t)(magnitude / 10ULL);
+    uint32_t fraction = (uint32_t)(magnitude % 10ULL);
 
-    printf("pos=%s%lu.%04lu mm counts=%lu%09lu f1=%u f2=%u\r\n",
+    printf("%s%lu.%01lu\r\n",
            (display < 0) ? "-" : "",
-           (unsigned long)mm,
-           (unsigned long)fraction,
-           (unsigned long)counts_high,
-           (unsigned long)counts_low,
-           (unsigned int)lic411.sample.error_1,
-           (unsigned int)lic411.sample.error_2);
+           (unsigned long)um,
+           (unsigned long)fraction);
 }
 
 void App_Encoder_Init(void)
 {
     app_encoder = (App_Encoder_Data){0};
+    app_encoder.status_timer_ms = APP_STATUS_PERIOD_MS;
     app_command_length = 0U;
     app_command_ready = 0U;
     Lic411_Init();
     (void)HAL_UART_Receive_IT(&huart3, &app_rx_byte, 1U);
-    printf("EnDat position acquisition started\r\n");
+    printf("INFO INIT_DONE\r\n");
 }
 
 void App_Encoder_Task(void)
@@ -177,9 +157,10 @@ void App_Encoder_Task(void)
         if (app_encoder.status_timer_ms == 0U)
         {
             app_encoder.status_timer_ms = APP_STATUS_PERIOD_MS;
-            printf("Waiting for valid EnDat data: crc=%lu timeout=%lu\r\n",
+            printf("ERROR NO_VALID_FRAME crc=%lu timeout=%lu failed=%lu\r\n",
                    (unsigned long)lic411.crc_error_count,
-                   (unsigned long)lic411.timeout_error_count);
+                   (unsigned long)lic411.timeout_error_count,
+                   (unsigned long)lic411.frame_error_count);
         }
         return;
     }

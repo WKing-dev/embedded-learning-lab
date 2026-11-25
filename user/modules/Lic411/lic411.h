@@ -45,7 +45,7 @@
 #define LIC411_STATUS_BITS         2U     /* S 之后 2 个错误位：F1(位置无效) + F2 */
 #define LIC411_CRC_BITS           5U
 #define LIC411_STEP_NM             1U     /* 测量步距 1 nm */
-#define LIC411_CALIBRATED_ZERO     28149026730ULL /* 机械标定零点 */
+#define LIC411_CALIBRATED_ZERO     28148908773ULL /* 机械标定零点 */
 #define LIC411_MAX_OFFSET         20U     /* 起始位最大搜索偏移（64 - 44） */
 /* 码字滑动补偿开关
    LIC 411 是绝对式编码器，用伪随机码(PRC)做绝对编码，相关窗口长度
